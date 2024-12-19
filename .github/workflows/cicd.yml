@@ -16,6 +16,7 @@ jobs:
           bash test/test.sh
   cicd:
     uses: internetarchive/cicd/.github/workflows/cicd.yml@main
+    runs-on: self-hosted
     with:
       BASE_DOMAIN: 'starnix.net'
       NOMAD_ADDR: 'http://nn.starnix.net:4646'
