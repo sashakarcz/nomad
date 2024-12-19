@@ -1,10 +1,10 @@
 on: [push, workflow_dispatch]
+runs-on: self-hosted
 jobs:
   lint:
     uses: internetarchive/dyno/.github/workflows/lint.yml@main
 
   test:
-    runs-on: self-hosted
     container:
       image: ghcr.io/internetarchive/dyno:main
     steps:
@@ -16,7 +16,6 @@ jobs:
           bash test/test.sh
   cicd:
     uses: internetarchive/cicd/.github/workflows/cicd.yml@main
-    runs-on: self-hosted
     with:
       BASE_DOMAIN: 'starnix.net'
       NOMAD_ADDR: 'http://nn.starnix.net:4646'
@@ -25,7 +24,6 @@ jobs:
     needs: [lint, test]
 
   image-test:
-    runs-on: self-hosted
     needs: [cicd]
     container:
       # test using the just built-and-pushed docker image from the [cicd] job above
