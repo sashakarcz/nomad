@@ -2,7 +2,7 @@ name: CICD
 on: push
 jobs:
   cicd:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions: { contents: read, packages: write, id-token: write }
     steps:
       - uses: internetarchive/cicd@v1
