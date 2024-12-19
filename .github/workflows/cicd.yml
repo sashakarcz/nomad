@@ -6,12 +6,14 @@ jobs:
   test:
     runs-on: self-hosted
     container:
-      # https://github.com/internetarchive/dyno
       image: ghcr.io/internetarchive/dyno:main
     steps:
-    - uses: actions/checkout@v4
-    - run: test/test.sh
-
+      - uses: actions/checkout@v4
+      - run: |
+          echo "Listing directory contents for debugging:"
+          ls -la
+          echo "Executing test script:"
+          bash test/test.sh
   cicd:
     uses: internetarchive/cicd/.github/workflows/cicd.yml@main
     with:
