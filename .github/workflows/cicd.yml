@@ -10,7 +10,7 @@ jobs:
       image: ghcr.io/internetarchive/dyno:main
     steps:
     - uses: actions/checkout@v4
-    - run: /app/test/test.sh
+    - run: test/test.sh
 
   cicd:
     uses: internetarchive/cicd/.github/workflows/cicd.yml@main
