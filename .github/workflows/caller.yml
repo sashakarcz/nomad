@@ -1,0 +1,32 @@
+name: CI/CD Caller Workflow
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: sashakarcz/nomad/.github/workflows/cicd.yml@main
+    with:
+      PLATFORMS: 'linux/amd64'
+    secrets:
+      NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
+    runs-on: self-hosted
+
+  test:
+    uses: sashakarcz/nomad/.github/workflows/cicd.yml@main
+    with:
+      TEST_SCRIPT: './test.sh'
+    runs-on: self-hosted
+    needs: build
+
+  deploy:
+    uses: sashakarcz/nomad/.github/workflows/cicd.yml@main
+    with:
+      BASE_DOMAIN: 'starnix.net'
+    secrets:
+      NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
+    runs-on: self-hosted
+    needs: test
