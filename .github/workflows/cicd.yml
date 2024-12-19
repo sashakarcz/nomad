@@ -1,14 +1,31 @@
-name: CICD
 on: [push, workflow_dispatch]
 jobs:
+  lint:
+    uses: internetarchive/dyno/.github/workflows/lint.yml@main
+
+  test:
+    runs-on: self-hosted
+    container:
+      # https://github.com/internetarchive/dyno
+      image: ghcr.io/internetarchive/dyno:main
+    steps:
+    - uses: actions/checkout@v4
+    - run: /app/test/test.sh
+
   cicd:
     uses: internetarchive/cicd/.github/workflows/cicd.yml@main
-    runs-on: self-hosted
-    permissions: { contents: read, packages: write, id-token: write }
     with:
-      BASE_DOMAIN: 'nn.starnix.net'
+      BASE_DOMAIN: 'starnix.net'
       NOMAD_ADDR: 'http://nn.starnix.net:4646'
-      REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  secrets:
-    NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
+    secrets:
+      NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
+    needs: [lint, test]
 
+  image-test:
+    runs-on: self-hosted
+    needs: [cicd]
+    container:
+      # test using the just built-and-pushed docker image from the [cicd] job above
+      image: 'docker://ghcr.io/${{ github.repository }}:${{ github.ref_name }}'
+    steps:
+    - run: fgrep 'hello js' /app/index.js
