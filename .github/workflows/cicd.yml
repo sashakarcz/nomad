@@ -2,11 +2,8 @@ on: [push, workflow_dispatch]
 
 jobs:
   lint:
+    uses: internetarchive/dyno/.github/workflows/lint.yml@main
     runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
-      - name: Linting
-        uses: internetarchive/dyno/.github/workflows/lint.yml@main
 
   test:
     runs-on: self-hosted
@@ -22,23 +19,20 @@ jobs:
           bash test/test.sh
 
   cicd:
+    uses: internetarchive/cicd/.github/workflows/cicd.yml@main
     runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
-      - name: CICD Job
-        uses: internetarchive/cicd/.github/workflows/cicd.yml@main
-        with:
-          BASE_DOMAIN: 'starnix.net'
-          NOMAD_ADDR: 'http://nn.starnix.net:4646'
-        secrets:
-          NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
+    with:
+      BASE_DOMAIN: 'starnix.net'
+      NOMAD_ADDR: 'http://nn.starnix.net:4646'
+    secrets:
+      NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
     needs: [lint, test]
 
   image-test:
     runs-on: self-hosted
+    needs: [cicd]
     container:
       image: 'docker://ghcr.io/${{ github.repository }}:${{ github.ref_name }}'
-    needs: [cicd]
     steps:
       - name: Run Image Test
         run: fgrep 'hello js' /app/index.js
