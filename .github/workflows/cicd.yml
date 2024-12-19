@@ -1,38 +1,59 @@
-on: [push, workflow_dispatch]
+name: CI/CD build, test and deploy using github registry and nomad
+
+on:
+  workflow_call:
+    secrets:
+      NOMAD_TOKEN:
+        description: 'Nomad cluster credentials'
+        required: false
+    inputs:
+      PLATFORMS:
+        description: 'Platforms for building'
+        required: false
+        type: string
+        default: 'linux/amd64'
+      BASE_DOMAIN:
+        description: 'Nomad cluster wildcard DNS domain name'
+        required: false
+        type: string
+        default: 'dev.archive.org'
+      TEST_SCRIPT:
+        description: 'Test script path'
+        required: false
+        type: string
+        default: './test.sh'
+env:
+  IMG: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
 
 jobs:
-  lint:
-    uses: internetarchive/dyno/.github/workflows/lint.yml@main
-    runs-on: self-hosted
+  build:
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Build and push image
+        run: |
+          echo "Building Docker image"
+          docker build -t ${{env.IMG}} .
+          docker push ${{env.IMG}}
+    outputs:
+      imgworkdir: '/app'
 
   test:
-    runs-on: self-hosted
+    needs: build
     container:
-      image: ghcr.io/internetarchive/dyno:main
+      image: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Run Test Script
-        run: |
-          echo "Listing directory contents for debugging:"
-          ls -la
-          echo "Executing test script:"
-          bash test/test.sh
+      - name: Run tests
+        working-directory: ${{ needs.build.outputs.imgworkdir }}
+        run: ${{ inputs.TEST_SCRIPT }}
 
-  cicd:
-    uses: internetarchive/cicd/.github/workflows/cicd.yml@main
-    runs-on: self-hosted
-    with:
-      BASE_DOMAIN: 'starnix.net'
-      NOMAD_ADDR: 'http://nn.starnix.net:4646'
-    secrets:
-      NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
-    needs: [lint, test]
-
-  image-test:
-    runs-on: self-hosted
-    needs: [cicd]
+  deploy:
+    needs: test
     container:
-      image: 'docker://ghcr.io/${{ github.repository }}:${{ github.ref_name }}'
+      image: docker://registry.gitlab.com/internetarchive/nomad/master
+      env:
+        BASE_DOMAIN: ${{ inputs.BASE_DOMAIN }}
+        NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
     steps:
-      - name: Run Image Test
-        run: fgrep 'hello js' /app/index.js
+      - name: Deploy
+        run: /deploy.sh
