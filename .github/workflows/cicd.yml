@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: internetarchive/cicd@v1
         with:
-          BASE_DOMAIN: 'nomad.starnix.net'
-          NOMAD_ADDR: 'https://nomad.starnix.net'
+          BASE_DOMAIN: 'nn.starnix.net'
+          NOMAD_ADDR: 'http://nn.starnix.net:4646'
           NOMAD_TOKEN: ${{ secrets.NOMAD_TOKEN }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
